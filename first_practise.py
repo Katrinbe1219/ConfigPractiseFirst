@@ -3,6 +3,11 @@ from tkinter import scrolledtext, ttk, Tk
 import os
 import pwd
 import argparse
+from vfs_part import VFS
+
+# при распаковке создаются новые файлы, формат данных изменяется
+# with open(.. , 'r') - происходит чтение, где формат данных остается,
+# новые файлы не создаются  - при чтении данные временно в RAM
 
 class EmulatorGUI:
 
@@ -13,12 +18,15 @@ class EmulatorGUI:
         user = pwd.getpwuid(uid).pw_name
         HEADER = "Эмулятор: " + user + "@" + hostname
 
-        #self.protected_text=""
-        
+        #vfs initialization
+        self.vfs = VFS()
+        self.current_dir = "~"
+
+        #main
         self.root = root
         self.root.title(HEADER)
         self.root.geometry("800x600")
-        self.prompt = user + "@" + hostname + ": "
+        self.prompt = user + "@" + hostname + ":" + self.current_dir + "$ "
 
         self.command_history = []
 
@@ -30,10 +38,19 @@ class EmulatorGUI:
         #анализируются параметры запуска эмулятора
         self.config = self.parse_arguments()
         self.show_parsed_arguments()
+
+        #implementing vfs
+        loading_vfs = self.vfs.load_from_xml_file(self.config['vfs'])
+        self.show_loaded_vfs_status(loading_vfs)
+        
+
+
+        #startu script
         self.show_prompt()
         self.execute_startup_script()
 
-        #начинается обычная работа эмулятора
+        
+        
         
 
         self.terminal_text.focus_set() # проверка фокуса на текстовом поле----------------------------------------------
@@ -65,8 +82,6 @@ class EmulatorGUI:
     def show_parsed_arguments(self):
         text = "Parametrs:\n"
         text += "-" * 50
-        items = self.config.items()
-        print(items)
 
         for key, value in self.config.items():
             text += f"\n--{key:15}: {value}"
@@ -214,7 +229,6 @@ class EmulatorGUI:
         
         return "break"
 
-
     def on_key_press(self, event):
         #Обраточик нажатия клавиш
         current_position = self.terminal_text.index(tk.INSERT)
@@ -281,12 +295,11 @@ class EmulatorGUI:
 
         commands  = ['ls' , 'cd' , 'exit', 
                  'head', 'uname', 'history' ,
-                 'rmdir']
+                 'rmdir', 'vfs-info']
 
         if command not in commands:
             return False
-
-            
+    
         return True
     
     def checking_arguments (self, command : str, arguments : list):
@@ -315,6 +328,17 @@ class EmulatorGUI:
             self.execute_exit()
         elif command == "head":
             self.execute_head(full_command)
+        elif command == "vfs-info":
+            self.execute_vfs_info(full_command)
+
+    def execute_vfs_info (self, command, tag = 'output'):
+        output = f"Name: {self.config['vfs']}"
+        sha = self.vfs.calculate_vfs_hash()
+        output += f"\nSHA-256: {sha}\n"
+
+        self.terminal_text.insert(tk.END, output, tag)
+        self.terminal_text.see(tk.END)
+        self.show_prompt()
 
 
     def execute_ls (self, inputLine, tag='output'):
@@ -378,6 +402,23 @@ class EmulatorGUI:
         else:
             self.show_prompt()
 
+    #vfs functions
+
+    def show_loaded_vfs_status(self, status: bool):
+
+        if (status) :
+            self.terminal_text.insert(tk.END, "VFS is loaded\n")
+        else:
+            self.terminal_text.insert(tk.END, "vfs is not loaded\n")
+
+        self.terminal_text.insert(tk.END, '-'*50)
+        self.insert_new_line()
+        self.terminal_text.see(tk.END)
+
+
+        return
+        
+        
 
 if __name__ == "__main__":
     root = tk.Tk()

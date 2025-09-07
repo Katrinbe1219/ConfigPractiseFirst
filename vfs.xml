@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vfs>
+    <directory name="/bin">
+        <file name="ls" content="echo &quot;Список файлов&quot;" permissions="rwxr-xr-x" />
+        <file name="cat" content="echo &quot;Содержимое файла&quot;" permissions="rwxr-xr-x" />
+        <file name="pwd" content="echo &quot;Текущая директория: $PWD&quot;" permissions="rwxr-xr-x" />
+    </directory>
+    
+    <directory name="/etc">
+        <file name="config.conf" content="debug_mode = true&#10;log_level = INFO" permissions="rw-r--r--" />
+        <file name="motd" content="Добро пожаловать в VFS!" permissions="rw-r--r--" />
+    </directory>
+    
+    <directory name="/home/user">
+        <file name="readme.txt" content="Это тестовый файл&#10;Содержимое в UTF-8" permissions="rw-r--r--" />
+        <file name="image.png" 
+              binary="true"
+              content="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==" 
+              permissions="rw-r--r--" />
+    </directory>
+</vfs>
