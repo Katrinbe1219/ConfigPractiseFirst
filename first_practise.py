@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import scrolledtext, ttk, Tk
 import os
 import pwd
+import argparse
 
 class EmulatorGUI:
 
@@ -12,7 +13,7 @@ class EmulatorGUI:
         user = pwd.getpwuid(uid).pw_name
         HEADER = "Эмулятор: " + user + "@" + hostname
 
-        self.protected_text=""
+        #self.protected_text=""
         
         self.root = root
         self.root.title(HEADER)
@@ -21,14 +22,104 @@ class EmulatorGUI:
 
         self.command_history = []
 
+        
+        #создаетс виджет gui
         self.setup_ui()
         self.setup_text_tags()
+
+        #анализируются параметры запуска эмулятора
+        self.config = self.parse_arguments()
+        self.show_parsed_arguments()
         self.show_prompt()
+        self.execute_startup_script()
+
+        #начинается обычная работа эмулятора
+        
 
         self.terminal_text.focus_set() # проверка фокуса на текстовом поле----------------------------------------------
-
-
         
+    # building setup --------------------------
+    def parse_arguments (self):
+        parser = argparse.ArgumentParser(
+            description="Эмултор с VFS и стартовым скриптом",
+            epilog= "Пример python first_practise.py --vsf ./vfs.xml --script ./start.txt"
+        )
+
+
+        parser.add_argument(
+            '--vfs',
+            type=str,
+            required= False,
+            help = 'Путь до VFS - xml файл'
+        )
+
+        parser.add_argument(
+            '--script',
+            type=str,
+            required= False,
+            help = 'Путь до стартового скрипта'
+        )
+
+        return vars(parser.parse_args())
+
+    def show_parsed_arguments(self):
+        text = "Parametrs:\n"
+        text += "-" * 50
+        items = self.config.items()
+        print(items)
+
+        for key, value in self.config.items():
+            text += f"\n--{key:15}: {value}"
+        
+        text += '\n'
+        text += "-" * 50
+        text += '\n'
+
+        self.terminal_text.insert(tk.END, text)
+
+    # start script 
+    def execute_startup_script (self):
+        script_path = self.config['script']
+
+        if not script_path:
+            return
+        
+        try:
+            if not os.path.exists(script_path):
+                self.show_prompt()
+                self.show_startup_script_command(script_path)
+                self.show_error('File does not exist')
+                return
+            
+            #with open авто закрывает файл после выхода из блока
+            with open(script_path, 'r', encoding='utf-8') as f:
+                script_content = f.read().splitlines()
+
+            self.run_startup_commands(script_content)
+
+        except Exception as e:
+            print(f"Ошибка при выполнении стартового скрипта: {e}")
+    
+    def show_startup_script_command(self, command, tag='output'):
+        command += '\n'
+        self.terminal_text.insert(tk.END, command, tag)
+        self.terminal_text.see(tk.END)
+    
+    def run_startup_commands(self, commands):
+
+        for i, command in enumerate(commands,1):
+            command = command.strip()
+
+            if not command or command.startswith('#'):
+                continue
+
+            self.show_startup_script_command(command)
+            self.check_any_command(command)
+            
+
+
+    # ui setup----------------------------------------------------------
+
     def setup_ui(self):
         self.terminal_text = scrolledtext.ScrolledText(
             self.root,
@@ -43,8 +134,6 @@ class EmulatorGUI:
                                 expand= True, padx = 10, pady = 10)
         
         #Регулировка нажатия клавиш
-        # self.terminal_text.bind('<Return>', self.on_enter) # enter
-        # self.terminal_text.bind('<Button-1>', self.on_click) # left btn
         self.set_up_bindings()
     
     def setup_text_tags(self):
@@ -61,10 +150,7 @@ class EmulatorGUI:
         
         self.terminal_text.see(tk.END) # auto scroll to the place of the inputing
     
-    def on_enter(self, event):
-        print("here")
-        pass
-
+    #binding---------------------
 
     def set_up_bindings(self):
         events = ['<Button-1>','<Button-2>','<Button-3>',
@@ -124,31 +210,8 @@ class EmulatorGUI:
         command_end = f"{current_line}.end"
         command_line_with_arguments = self.terminal_text.get(command_start, command_end).strip()
 
-        command, args = self.parser(command_line_with_arguments)
-        command_validation = self.checking_command(command=command)
+        self.check_any_command(command_line_with_arguments)
         
-        if not command_validation:
-                self.show_error(f"{command} is incorrect")
-                return "break"
-        
-        args_validation = True
-        if (len(args)>0):
-            args_validation = self.checking_arguments(command, args)
-        
-        if not args_validation:
-                self.show_error(f"arguments are incorrect")
-                return "break"
-        
-        
-        if command:
-            self.command_history.append(command_line_with_arguments)
-            self.execute_command(command, command_line_with_arguments)
-        else:
-            self.show_prompt()
-        
-
-        
-
         return "break"
 
 
@@ -166,9 +229,6 @@ class EmulatorGUI:
         
         return None
 
-    # def on_key_release(self, event):
-    #         self.forse_end()
-
     def on_arrow_key(self, event):
         current_position = self.terminal_text.index(tk.INSERT)
         promt_pos = self.get_current_prompt_position()
@@ -179,10 +239,8 @@ class EmulatorGUI:
         
         return None
 
-    
-    def forse_end(self):
-        self.terminal_text.mark_set(tk.INSERT, tk.END)
-        self.terminal_text.see(tk.END)
+
+     # prompt position --------------------------------
 
     def get_current_prompt_position(self):
         # Получаем весь текст
@@ -205,6 +263,8 @@ class EmulatorGUI:
                 return str(i  +  1)
         return '1'
 
+    # command analyze ------------------------------------------------
+
     def parser( self, inputLine: str):
 
         if not inputLine.strip():
@@ -217,7 +277,6 @@ class EmulatorGUI:
 
         return command, arguments
 
-    
     def checking_command (self, command : str):
 
         commands  = ['ls' , 'cd' , 'exit', 
@@ -254,9 +313,17 @@ class EmulatorGUI:
             self.execute_cd(full_command)
         elif command == "exit":
             self.execute_exit()
+        elif command == "head":
+            self.execute_head(full_command)
 
 
     def execute_ls (self, inputLine, tag='output'):
+        inputLine += '\n'
+        self.terminal_text.insert(tk.END, inputLine, tag)
+        self.terminal_text.see(tk.END)
+        self.show_prompt()
+    
+    def execute_head (self, inputLine, tag='output'):
         inputLine += '\n'
         self.terminal_text.insert(tk.END, inputLine, tag)
         self.terminal_text.see(tk.END)
@@ -269,8 +336,8 @@ class EmulatorGUI:
         self.terminal_text.see(tk.END)
         self.show_prompt()
 
-    def execute_exit(self): #self.root.destroy()
-        root.destroy()
+    def execute_exit(self):
+        self.root.destroy()
 
     def show_error(self, error, tag='error'):
         error += '\n'
@@ -278,81 +345,38 @@ class EmulatorGUI:
         self.terminal_text.see(tk.END)
         self.show_prompt()
 
+
+    # base features  --------------------
+    def forse_end(self):
+        self.terminal_text.mark_set(tk.INSERT, tk.END)
+        self.terminal_text.see(tk.END)
+
     def insert_new_line(self):
         self.terminal_text.insert(tk.END, '\n')
         self.terminal_text.see(tk.END)
 
-
-
-
-
-
-
-root = Tk()
-
-
-
-
-def parser( inputLine: str):
-
-    if not inputLine.strip():
-        return "", []
-    
-
-    spliting = inputLine.split(' ')
-    command = spliting[0] if spliting else  ""
-    arguments = spliting[1::] if len(spliting) > 1 else []
-
-    return command, arguments
-
-
-def checking_command (command : str, arguments: list):
-
-    args  = {'ls' : [], 'cd' : [], 'exit': []}
-
-    if command not in args.keys():
-        return False
-    
-    if len(arguments) > 0 and command not in args.keys():
-        return False
-    
-    for arg in arguments:
-        if arg not in args[command]:
-            return False
+    def check_any_command(self, command_line_with_arguments):
+        command, args = self.parser(command_line_with_arguments)
+        command_validation = self.checking_command(command=command)
         
-    return True
-
-def execute_command(inputLine):
-    if not inputLine:
-        # вывести на экран ошибку
-        return
-    
-    command, args = parser(inputLine)
-    checking = checking_command(command, args)
-
-    if not checking:
-        # вывести на экран ошибку
-        return
-    
-    if command == "ls":
-        execute_ls(inputLine)
-
-    elif command == "cd":
-        execute_cd(inputLine)
-    elif command == "exit":
-        execute_exit()
-
-
-def execute_ls (inputLine):
-    #вывести команду inputLine
-    pass
-
-def execute_cd (inputLine):
-    #вывести команду inputLine
-    pass
-
-def execute_exit(): #self.root.destroy()
-    root.destroy()
+        if not command_validation:
+                self.show_error(f"{command} is incorrect")
+                return "break"
+        
+        args_validation = True
+        if (len(args)>0):
+            args_validation = self.checking_arguments(command, args)
+        
+        if not args_validation:
+                self.show_error(f"arguments are incorrect")
+                return "break"
+        
+        
+        if command:
+            self.command_history.append(command_line_with_arguments)
+            self.execute_command(command, command_line_with_arguments)
+        else:
+            self.show_prompt()
 
 
 if __name__ == "__main__":
