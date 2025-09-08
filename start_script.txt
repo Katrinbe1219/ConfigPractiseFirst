@@ -7,3 +7,9 @@ cd
 head
 
 ls -99
+cd home/katrinbe
+cd /
+cd ..
+
+head home/katrinbe/smth.py
+

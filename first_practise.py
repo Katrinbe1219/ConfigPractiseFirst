@@ -12,11 +12,11 @@ from vfs_part import VFS
 class EmulatorGUI:
 
     def __init__(self, root: Tk):
-        hostname = os.uname()[1]
+        self.hostname = os.uname()[1]
         uid = os.getuid()
 
-        user = pwd.getpwuid(uid).pw_name
-        HEADER = "Эмулятор: " + user + "@" + hostname
+        self.user = pwd.getpwuid(uid).pw_name
+        HEADER = "Эмулятор: " + self.user + "@" + self.hostname
 
         #vfs initialization
         self.vfs = VFS()
@@ -26,7 +26,7 @@ class EmulatorGUI:
         self.root = root
         self.root.title(HEADER)
         self.root.geometry("800x600")
-        self.prompt = user + "@" + hostname + ":" + self.current_dir + "$ "
+        self.prompt = self.user + "@" + self.hostname + ":" + self.current_dir + "$ "
 
         self.command_history = []
 
@@ -289,7 +289,20 @@ class EmulatorGUI:
         command = spliting[0] if spliting else  ""
         arguments = spliting[1::] if len(spliting) > 1 else []
 
-        return command, arguments
+        checked_arguments = []
+
+        if command == 'ls' and  len(arguments) >0:
+            for arg in arguments:
+                arg = arg.strip('-')
+                if len(arg) == 1:
+                    checked_arguments.append(arg)
+                else:
+                    for min_arg in arg:
+                        checked_arguments.append(min_arg)
+        else:
+            checked_arguments = arguments
+
+        return command, checked_arguments
 
     def checking_command (self, command : str):
 
@@ -303,13 +316,12 @@ class EmulatorGUI:
         return True
     
     def checking_arguments (self, command : str, arguments : list):
-        args  = {'ls' : [], 'cd' : [], 'exit': [], 
-                 'head':[], 'uname':[], 'history' :[],
-                 'rmdir':[]}
-
+        if command == 'cd' or command == 'head':
+            return True
         
-        if len(arguments) > 0 and command not in args.keys():
-            return False
+        args  = {'ls' : ['l', 'r'],  'exit': [], 'uname': [], 
+                 'head':[],  'history' :[],
+                 'rmdir':[]}
         
         for arg in arguments:
             if arg not in args[command]:
@@ -317,21 +329,26 @@ class EmulatorGUI:
             
         return True
 
-    def execute_command(self,command, full_command):
-        
-        if command == "ls":
-            self.execute_ls(full_command)
+    def execute_command(self,command, full_command, args: list):
 
+        if command == "ls":
+            self.execute_ls(args)
         elif command == "cd":
-            self.execute_cd(full_command)
+            self.execute_cd(args)
         elif command == "exit":
             self.execute_exit()
         elif command == "head":
-            self.execute_head(full_command)
+            self.execute_head(args)
         elif command == "vfs-info":
-            self.execute_vfs_info(full_command)
+            self.execute_vfs_info()
+        elif command == "history":
+            self.execute_history()
+        elif command == "uname":
+            self.execute_uname()
+        else:
+            self.show_error("No existing command")
 
-    def execute_vfs_info (self, command, tag = 'output'):
+    def execute_vfs_info (self, tag = 'output'):
         output = f"Name: {self.config['vfs']}"
         sha = self.vfs.calculate_vfs_hash()
         output += f"\nSHA-256: {sha}\n"
@@ -340,24 +357,86 @@ class EmulatorGUI:
         self.terminal_text.see(tk.END)
         self.show_prompt()
 
-
-    def execute_ls (self, inputLine, tag='output'):
-        inputLine += '\n'
-        self.terminal_text.insert(tk.END, inputLine, tag)
+    def execute_history(self, tag='output'):
+        history = self.command_history
+        text = ''
+        for i in range(len(history)):
+            text += f'\n{i:.<6} {history[i]}'
+        
+        self.terminal_text.insert(tk.END, text[1::], tag)
         self.terminal_text.see(tk.END)
+        
+        self.insert_new_line()
         self.show_prompt()
     
-    def execute_head (self, inputLine, tag='output'):
-        inputLine += '\n'
+    def execute_uname(self, tag='output'):
+        
+        text = "KATRIN BE"
+        self.terminal_text.insert(tk.END, text, tag)
+        self.terminal_text.see(tk.END)
+        
+        self.insert_new_line()
+        self.show_prompt()
+
+
+    def execute_ls (self, args,  tag='output'):
+        l_in_args = 'l' in args
+        inputLine = ''
+        pathes  = self.vfs.get_current_node_children(args)
+        one_line_counter = 0
+
+        for path in pathes:
+            if l_in_args:
+                inputLine += f'\n{path}'
+            else:
+                if one_line_counter +30 <=120:
+                    inputLine += f"{path:<30}"
+                    one_line_counter +=30
+                else:
+                    inputLine += f"\n{path:<30}"
+                    one_line_counter = 30
+
+        inputLine = inputLine[1::] if l_in_args else inputLine
         self.terminal_text.insert(tk.END, inputLine, tag)
         self.terminal_text.see(tk.END)
+
+        self.insert_new_line()
         self.show_prompt()
+    
+
+    
+    def execute_cd (self, args):
+        if len(args) == 0:
+            self.show_error("Incorrect command")
+            return
+        
+        cur_path = self.prompt.split(':')[1].strip()[:-1]
+
+        new_path = self.vfs.execute_cd(args[0], cur_path)
+        if not new_path:
+            self.show_error("Incorrect command")
+            return
         
 
-    def execute_cd (self, inputLine, tag='output'):
-        inputLine += '\n'
-        self.terminal_text.insert(tk.END, inputLine, tag)
+        self.update_prompt(new_path)
+        self.show_prompt()
+    
+    def execute_head (self, args, tag='output'):
+        if len(args) == 0:
+            self.show_error("Incorrect command")
+            return
+        
+        content = self.vfs.execute_head(args[0])
+        if not content:
+            self.show_error("Incorrect command")
+            return
+        
+        content = '\n'.join(content)
+        
+        self.terminal_text.insert(tk.END, content, tag )
         self.terminal_text.see(tk.END)
+        self.insert_new_line()
+
         self.show_prompt()
 
     def execute_exit(self):
@@ -379,7 +458,13 @@ class EmulatorGUI:
         self.terminal_text.insert(tk.END, '\n')
         self.terminal_text.see(tk.END)
 
+    def update_prompt(self, cur_dir):
+        self.prompt =  self.user + "@" + self.hostname + ":" + cur_dir + "$ "
+        self.current_dir = cur_dir
+
+    
     def check_any_command(self, command_line_with_arguments):
+        self.command_history.append(command_line_with_arguments)
         command, args = self.parser(command_line_with_arguments)
         command_validation = self.checking_command(command=command)
         
@@ -397,8 +482,7 @@ class EmulatorGUI:
         
         
         if command:
-            self.command_history.append(command_line_with_arguments)
-            self.execute_command(command, command_line_with_arguments)
+            self.execute_command(command, command_line_with_arguments, args)
         else:
             self.show_prompt()
 

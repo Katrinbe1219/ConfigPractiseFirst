@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vfs>
+    <!-- Главная директория -->
+    <directory name="~">
+        
+        <!-- Директория bin -->
+        <directory name="bin">
+            <file name="ls" content="#!/bin/bash&#10;echo &quot;Listing files...&quot;&#10;ls -la" permissions="rwxr-xr-x" />
+            <file name="cat" content="#!/bin/bash&#10;echo &quot;File content:&quot;&#10;cat &quot;$1&quot;" permissions="rwxr-xr-x" />
+            <file name="pwd" content="#!/bin/bash&#10;echo &quot;Current directory: $(pwd)&quot;" permissions="rwxr-xr-x" />
+        </directory>
+
+        <!-- Директория libs -->
+        <directory name="libs">
+            <file name="math_lib.py" content="import math&#10;&#10;def add(a, b):&#10;    return a + b&#10;&#10;def multiply(a, b):&#10;    return a * b&#10;&#10;def sqrt(x):&#10;    return math.sqrt(x)" permissions="rw-r--r--" />
+            <file name="string_utils.py" content="def reverse_string(s):&#10;    return s[::-1]&#10;&#10;def capitalize_words(text):&#10;    return ' '.join(word.capitalize() for word in text.split())" permissions="rw-r--r--" />
+        </directory>
+
+        <!-- Директория home -->
+        <directory name="home">
+            
+            <!-- Директория katrinbe -->
+            <directory name="katrinbe">
+                <directory name="uni">
+                    <file name="schedule.txt" content="Monday:&#10;- 9:00 Math&#10;- 11:00 Programming&#10;- 14:00 Physics&#10;&#10;Tuesday:&#10;- 10:00 English&#10;- 13:00 Algorithms" permissions="rw-r--r--" />
+                    <file name="grades.txt" content="Math: A&#10;Programming: A+&#10;Physics: B+&#10;English: A-&#10;Algorithms: A" permissions="rw-r--r--" />
+                </directory>
+                
+                <directory name="work">
+                    <file name="project_tasks.txt" content="Current projects:&#10;1. Web application - deadline: 2024-02-15&#10;2. Database optimization - deadline: 2024-03-01&#10;3. API integration - deadline: 2024-02-28" permissions="rw-r--r--" />
+                    <file name="meetings.txt" content="Weekly schedule:&#10;Monday: Team meeting 10:00&#10;Wednesday: Code review 14:00&#10;Friday: Project update 11:00" permissions="rw-r--r--" />
+                </directory>
+                
+                <!-- Файлы в katrinbe -->
+                <file name="code.txt" content="# Sample Python code&#10;def hello_world():&#10;    print(&quot;Hello, World!&quot;)&#10;    return True&#10;&#10;# Main program&#10;if __name__ == &quot;__main__&quot;:&#10;    hello_world()" permissions="rw-r--r--" />
+                
+                <file name="to_do.txt" content="TODO List:&#10;✓ Complete math homework&#10;✓ Buy groceries&#10;⏳ Finish programming project&#10;⏳ Call mom&#10;⏳ Schedule dentist appointment" permissions="rw-r--r--" />
+                
+                <file name="smth.py" content="#!/usr/bin/env python3&#10;&quot;&quot;&quot;&#10;Something important&#10;&quot;&quot;&quot;&#10;&#10;import os&#10;import sys&#10;&#10;def important_function():&#10;    &quot;&quot;&quot;Do something important&quot;&quot;&quot;&#10;    print(&quot;Doing something very important!&quot;)&#10;    return 42&#10;&#10;if __name__ == &quot;__main__&quot;:&#10;    result = important_function()&#10;    print(f&quot;Result: {result}&quot;)" permissions="rwxr-xr-x" />
+            </directory>
+
+            <!-- Директория frolovs -->
+            <directory name="frolovs">
+                
+                <!-- Директория kate -->
+                <directory name="kate">
+                    <file name="birth.txt" content="Name: Kate Frolova&#10;Birthdate: 1995-08-12&#10;Age: 28&#10;Zodiac: Leo&#10;&#10;Favorite things:&#10;- Reading books&#10;- Painting&#10;- Traveling&#10;- Coffee" permissions="rw-r--r--" />
+                    <file name="hobbies.txt" content="Hobbies and interests:&#10;1. Photography&#10;2. Yoga&#10;3. Cooking&#10;4. Hiking&#10;5. Music concerts" permissions="rw-r--r--" />
+                </directory>
+                
+                <!-- Директория olesya -->
+                <directory name="olesya">
+                    <file name="birth.txt" content="Name: Olesya Frolova&#10;Birthdate: 1998-03-25&#10;Age: 25&#10;Zodiac: Aries&#10;&#10;Favorite things:&#10;- Dancing&#10;- Shopping&#10;- Movies&#10;- Chocolate" permissions="rw-r--r--" />
+                    <file name="goals.txt" content="Personal goals for 2024:&#10;✓ Learn Spanish basics&#10;⏳ Complete online course&#10;⏳ Visit 3 new countries&#10;⏳ Read 20 books&#10;⏳ Start yoga practice" permissions="rw-r--r--" />
+                </directory>
+                
+            </directory>
+            
+        </directory>
+        
+    </directory>
+</vfs>
