@@ -53,6 +53,12 @@
                     <file name="birth.txt" content="Name: Olesya Frolova&#10;Birthdate: 1998-03-25&#10;Age: 25&#10;Zodiac: Aries&#10;&#10;Favorite things:&#10;- Dancing&#10;- Shopping&#10;- Movies&#10;- Chocolate" permissions="rw-r--r--" />
                     <file name="goals.txt" content="Personal goals for 2024:&#10;✓ Learn Spanish basics&#10;⏳ Complete online course&#10;⏳ Visit 3 new countries&#10;⏳ Read 20 books&#10;⏳ Start yoga practice" permissions="rw-r--r--" />
                 </directory>
+                <directory name="new">
+                </directory>
+                <directory name="new_1">
+                    <directory name="za">
+                    </directory>
+                </directory>
                 
             </directory>
             

@@ -316,12 +316,10 @@ class EmulatorGUI:
         return True
     
     def checking_arguments (self, command : str, arguments : list):
-        if command == 'cd' or command == 'head':
+        if command == 'cd' or command == 'head' or command == 'rmdir':
             return True
         
-        args  = {'ls' : ['l', 'r'],  'exit': [], 'uname': [], 
-                 'head':[],  'history' :[],
-                 'rmdir':[]}
+        args  = {'ls' : ['l', 'r'],  'exit': [], 'uname': [],   'history' :[]}
         
         for arg in arguments:
             if arg not in args[command]:
@@ -345,6 +343,8 @@ class EmulatorGUI:
             self.execute_history()
         elif command == "uname":
             self.execute_uname()
+        elif command == "rmdir":
+            self.execute_rmdir(args)
         else:
             self.show_error("No existing command")
 
@@ -403,7 +403,18 @@ class EmulatorGUI:
         self.insert_new_line()
         self.show_prompt()
     
-
+    def execute_rmdir(self, args):
+        if len(args) == 0:
+            self.show_error("Incorrect command")
+            return
+        
+        result = self.vfs.execute_rmdir(args[0])
+        if not result:
+            self.show_error("Incorrect command")
+            return
+        
+        self.insert_new_line()
+        self.show_prompt()
     
     def execute_cd (self, args):
         if len(args) == 0:

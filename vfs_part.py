@@ -169,9 +169,23 @@ class VFS:
             return  returning_path
             
 
-        paths = command.split('/')
+        pathes = command.split('/')
+        if pathes[0]=='..':
+            index = 0 
+            while( index < len(pathes) and \
+                  pathes[index] == '..' and current_node.parent is  not None):
+                
+                if index + 1 < len(pathes) and  pathes[index+1] == '..' and current_node.parent.parent is None:
+                    return False
 
-        for path in paths:
+                current_node = current_node.parent
+                index +=1
+            pathes = pathes[index:]
+            old_path = '/'.join(old_path.split('/')[:-index])
+            command = '/'.join(command.split('/')[index::])
+
+
+        for path in pathes:
             if path in current_node.children.keys():
                 current_node = current_node.children[path]
             else:
@@ -209,7 +223,39 @@ class VFS:
                     print(f'problem with decoding {e} ')
                     return False
 
-    
+    def execute_rmdir(self, dir_name:str):
+
+        if dir_name == self.current_directory.name:
+                return False
+        
+        pathes = dir_name.split('/')
+        cur_directory = self.current_directory
+        
+        if pathes[0]=='..':
+            index = 0 
+            while( index < len(pathes) and \
+                  pathes[index] == '..' and cur_directory.parent is  not None):
+                
+                if index + 1 < len(pathes) and  pathes[index+1] == '..' and cur_directory.parent.parent is None:
+                    return False
+
+                cur_directory = cur_directory.parent
+                index +=1
+            pathes = pathes[index:]
+
+        for path in pathes:
+            if path not in cur_directory.children.keys():
+                return  False
+            cur_directory = cur_directory.children[path]
+
+        if cur_directory.is_directory and  (cur_directory.children == None  or len(list(cur_directory.children.keys())) == 0):
+            parent = cur_directory.parent
+
+            parent.children.pop(cur_directory.name)
+            return True
+            
+
+        return False
 
 
 
